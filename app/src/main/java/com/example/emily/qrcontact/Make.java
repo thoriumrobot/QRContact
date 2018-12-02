@@ -5,6 +5,8 @@ import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
 import android.support.design.widget.BottomNavigationView;
 import android.support.v7.app.AppCompatActivity;
+import android.text.Editable;
+import android.text.SpannableStringBuilder;
 import android.util.Log;
 import android.view.Menu;
 import android.view.MenuItem;
@@ -14,6 +16,12 @@ import android.widget.EditText;
 import android.widget.ImageView;
 
 import com.squareup.picasso.Picasso;
+
+import ezvcard.Ezvcard;
+import ezvcard.VCard;
+import ezvcard.VCardVersion;
+import ezvcard.parameter.EmailType;
+import ezvcard.property.StructuredName;
 
 public class Make extends AppCompatActivity {
     @Override
@@ -31,10 +39,21 @@ public class Make extends AppCompatActivity {
         refresh.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
+                VCard vcard = new VCard();
+                StructuredName fullName = new StructuredName();
+                fullName.setFamily(String.valueOf(lastName.getText()));
+                fullName.setGiven(String.valueOf(firstName.getText()));
+                vcard.setStructuredName(fullName);
+                vcard.addEmail(String.valueOf(email.getText()), EmailType.WORK);
+                vcard.addTelephoneNumber(String.valueOf(phone.getText()));
+                String fullContact = Ezvcard.write(vcard).version(VCardVersion.V3_0).go();
+                Log.d("myTag", fullContact);
+
                 Log.d("myTag", "Registered Click");
-                Picasso.get().load("https://api.qrserver.com/v1/create-qr-code/?size=300x300&data=" + "BEGIN:VCARD VERSION:2.1 N:"
-                        + lastName.getText() + ";" + firstName.getText() + " " + "FN:" + firstName.getText() + " " + lastName.getText()
-                        + " EMAIL;TYPE=INTERNET:" + email.getText() + " TEL;TYPE=voice,cell,pref:" + phone.getText() + " END:VCARD" ).into(imageView);
+                Picasso.get().load("https://api.qrserver.com/v1/create-qr-code/?size=300x300&data=" + fullContact).into(imageView);
+
+
+
 
             }
         });
@@ -63,6 +82,8 @@ public class Make extends AppCompatActivity {
                 return false;
             }
         });
+
+
     }
     private void loadImage(ImageView toSet) {
         Log.d("fucntion", "Default code");
