@@ -24,6 +24,10 @@ import ezvcard.parameter.EmailType;
 import ezvcard.property.StructuredName;
 
 public class Make extends AppCompatActivity {
+    final String[] VCardTags = {"VERSION", "PRODID", "N:", "EMAIL", "TEL", "END"};
+
+
+
     @Override
     protected void onCreate(@Nullable Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -47,10 +51,11 @@ public class Make extends AppCompatActivity {
                 vcard.addEmail(String.valueOf(email.getText()), EmailType.WORK);
                 vcard.addTelephoneNumber(String.valueOf(phone.getText()));
                 String fullContact = Ezvcard.write(vcard).version(VCardVersion.V3_0).go();
-                Log.d("myTag", fullContact);
+
+                fullContact = getUrlVCard(vcard);
 
                 Log.d("myTag", "Registered Click");
-                Picasso.get().load("https://api.qrserver.com/v1/create-qr-code/?size=300x300&data=" + fullContact).into(imageView);
+                Picasso.get().load("https://api.qrserver.com/v1/create-qr-code/?size=500x500&data=" + fullContact).into(imageView);
 
 
 
@@ -85,9 +90,42 @@ public class Make extends AppCompatActivity {
 
 
     }
+
+    private String getUrlVCard(VCard vCard) {
+        String fullContact = Ezvcard.write(vCard).version(VCardVersion.V3_0).go();
+        String newFullContact = fullContact;
+
+        for (int x = 0; x < VCardTags.length; x++) {
+            if (newFullContact.contains(VCardTags[x])) {
+                int parseStop = newFullContact.indexOf(VCardTags[x]);
+                if (VCardTags[x].equals("N:")) {
+                    parseStop = newFullContact.indexOf(VCardTags[x], newFullContact.indexOf(VCardTags[x - 1]));
+                }
+                try {
+                    newFullContact = newFullContact.substring(0, parseStop) + "%0A"
+                            + newFullContact.substring(parseStop);
+                } catch (Exception e) {
+                    Log.d("out of bounds", e.toString() + " " + parseStop);
+
+                }
+            }
+        }
+
+
+        Log.d("test", newFullContact);
+        return newFullContact;
+
+
+
+
+    }
+
+
     private void loadImage(ImageView toSet) {
         Log.d("fucntion", "Default code");
         Picasso.get().load("https://api.qrserver.com/v1/create-qr-code/?size=300x300&data=Example").into(toSet);
     }
+
+
 
 }
