@@ -146,8 +146,13 @@ public class Make extends AppCompatActivity {
                 VCard toAddToProfile = makeVCard(firstName, lastName, email, phone);
                 Profile toAddToList = new Profile(toAddToProfile, profileName.getText().toString());
 
+                if (toAddToList == null || toAddToList.getProfileName().equals("")) {
+                    Log.d("Save Profile", "No Profile Name");
+                    return;
+                }
+
                 for (Profile profile : profileArrayList) {
-                    if (profile.equals(toAddToList)) {
+                    if (profile.equals(toAddToList) || toAddToList.getProfileName().equals(profile.getProfileName())) {
                         isThereACopy = true;
                         break;
                     }
@@ -155,9 +160,11 @@ public class Make extends AppCompatActivity {
                 }
 
                 if (isThereACopy) {
-                    Log.d("Save Profile", "Profile already exists");
+                    Log.d("Save Profile", "Profile already exists or Profile Name is Already Taken");
                     return;
                 }
+
+
 
                 profileArrayList.add(toAddToList);
             }
@@ -236,17 +243,32 @@ public class Make extends AppCompatActivity {
             }
 
             Profile newCompare = (Profile) toCompare;
-            String firstName = vCard.getStructuredName().getGiven();
-            String toCompareFirstName = newCompare.getvCard().getStructuredName().getGiven();
-            //String LastName = vCard.getFormatted
+            String firstName = nullToEmpty(vCard.getStructuredName().getGiven());
+            String toCompareFirstName = nullToEmpty(newCompare.getvCard().getStructuredName().getGiven());
+            String lastName = nullToEmpty(vCard.getStructuredName().getFamily());
+            String toCompareLastName = nullToEmpty(newCompare.getvCard().getStructuredName().getGiven());
+            String email = nullToEmpty(vCard.getEmails().get(0).getValue());
+            String toCompareEmail = nullToEmpty(newCompare.getvCard().getEmails().get(0).getValue());
+            String phone = nullToEmpty(vCard.getTelephoneNumbers().get(0).getText());
+            String toComparePhone = nullToEmpty(newCompare.getvCard().getTelephoneNumbers().get(0).getText());
 
 
-            return (vCard.getStructuredName().getGiven().equals(newCompare.getvCard().getStructuredName().getGiven())
-                    && vCard.getStructuredName().getFamily().equals(newCompare.getvCard().getStructuredName().getFamily())
-                    //&& vCard.get
-                    && profileName.equals(newCompare.getProfileName()));
+
+
+
+            return (firstName.equals(toCompareFirstName) && lastName.equals(toCompareLastName) && email.equals(toCompareEmail)
+                    && phone.equals(toComparePhone) && profileName.equals(newCompare.getProfileName()));
 
         }
+
+        private String nullToEmpty(String maybeNull) {
+            if (maybeNull == null) {
+                return "";
+            }
+
+            return maybeNull;
+        }
+
 
         public String toString() {
             return profileName;
