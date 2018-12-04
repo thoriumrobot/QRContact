@@ -3,6 +3,7 @@ import android.content.Intent;
 import android.os.Bundle;
 import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
+import android.support.constraint.ConstraintLayout;
 import android.support.design.widget.BottomNavigationView;
 import android.support.v7.app.AppCompatActivity;
 import android.text.Editable;
@@ -11,11 +12,17 @@ import android.util.Log;
 import android.view.Menu;
 import android.view.MenuItem;
 import android.view.View;
+import android.widget.AdapterView;
+import android.widget.ArrayAdapter;
 import android.widget.Button;
 import android.widget.EditText;
 import android.widget.ImageView;
+import android.widget.ListView;
 
 import com.squareup.picasso.Picasso;
+
+import java.util.ArrayList;
+import java.util.List;
 
 import ezvcard.Ezvcard;
 import ezvcard.VCard;
@@ -39,17 +46,12 @@ public class Make extends AppCompatActivity {
         final EditText lastName = (EditText) findViewById(R.id.lastName);
         final EditText phone = (EditText) findViewById(R.id.phone);
         final EditText email = (EditText) findViewById(R.id.email);
+        final EditText profileName = findViewById(R.id.profileName);
 
         refresh.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                VCard vcard = new VCard();
-                StructuredName fullName = new StructuredName();
-                fullName.setFamily(String.valueOf(lastName.getText()));
-                fullName.setGiven(String.valueOf(firstName.getText()));
-                vcard.setStructuredName(fullName);
-                vcard.addEmail(String.valueOf(email.getText()), EmailType.WORK);
-                vcard.addTelephoneNumber(String.valueOf(phone.getText()));
+                VCard vcard = makeVCard(firstName, lastName, email, phone);
                 String fullContact = Ezvcard.write(vcard).version(VCardVersion.V3_0).go();
 
                 fullContact = getUrlVCard(vcard);
@@ -64,7 +66,7 @@ public class Make extends AppCompatActivity {
         });
         loadImage(imageView);
 
-        BottomNavigationView bottomNavigationView = (BottomNavigationView) findViewById(R.id.navigation);
+        final BottomNavigationView bottomNavigationView = (BottomNavigationView) findViewById(R.id.navigation);
         Menu menu = bottomNavigationView.getMenu();
         MenuItem menuItem = menu.getItem(1);
         menuItem.setChecked(true);
@@ -85,6 +87,79 @@ public class Make extends AppCompatActivity {
                 }
 
                 return false;
+            }
+        });
+
+
+        final ListView profileList = findViewById(R.id.profileList);
+        final Button saveProfile = findViewById(R.id.saveProfile);
+        final Button chooseProfile = findViewById(R.id.chooseProfile);
+        final List<Profile> profileArrayList = new ArrayList<>();
+        final ConstraintLayout profileLayout = findViewById(R.id.profileLayout);
+
+
+        ArrayAdapter<Profile> arrayAdapter = new ArrayAdapter<>(
+                this.getApplicationContext(),
+                android.R.layout.simple_list_item_1,
+                profileArrayList
+        );
+        profileList.setAdapter(arrayAdapter);
+
+        chooseProfile.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                if (profileArrayList.size() == 0) {
+                    Log.d("Choose Profile", "No profiles");
+                    return;
+                }
+                profileLayout.setVisibility(View.GONE);
+                bottomNavigationView.setVisibility(View.GONE);
+                imageView.setVisibility(View.GONE);
+                profileList.setVisibility(View.VISIBLE);
+            }
+        });
+
+        profileList.setOnItemClickListener(new AdapterView.OnItemClickListener() {
+            @Override
+            public void onItemClick(AdapterView parent, View view, int position, long id) {
+                Profile temp = profileArrayList.get(position);
+                firstName.setText(temp.getvCard().getStructuredName().getGiven());
+                lastName.setText(temp.getvCard().getStructuredName().getFamily());
+                email.setText(temp.getvCard().getEmails().get(0).getValue());
+                phone.setText(temp.getvCard().getTelephoneNumbers().get(0).getText());
+                profileName.setText(temp.getProfileName());
+
+                profileLayout.setVisibility(View.VISIBLE);
+                bottomNavigationView.setVisibility(View.VISIBLE);
+                imageView.setVisibility(View.VISIBLE);
+                profileList.setVisibility(View.GONE);
+
+
+            }
+        });
+
+        saveProfile.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+
+                boolean isThereACopy = false;
+                VCard toAddToProfile = makeVCard(firstName, lastName, email, phone);
+                Profile toAddToList = new Profile(toAddToProfile, profileName.getText().toString());
+
+                for (Profile profile : profileArrayList) {
+                    if (profile.equals(toAddToList)) {
+                        isThereACopy = true;
+                        break;
+                    }
+                    isThereACopy = false;
+                }
+
+                if (isThereACopy) {
+                    Log.d("Save Profile", "Profile already exists");
+                    return;
+                }
+
+                profileArrayList.add(toAddToList);
             }
         });
 
@@ -125,6 +200,61 @@ public class Make extends AppCompatActivity {
         Log.d("fucntion", "Default code");
         Picasso.get().load("https://api.qrserver.com/v1/create-qr-code/?size=300x300&data=Example").into(toSet);
     }
+
+    private VCard makeVCard(EditText firstName, EditText lastName, EditText email, EditText phone) {
+        VCard vcard = new VCard();
+        StructuredName fullName = new StructuredName();
+        fullName.setFamily(String.valueOf(lastName.getText()));
+        fullName.setGiven(String.valueOf(firstName.getText()));
+        vcard.setStructuredName(fullName);
+        vcard.addEmail(String.valueOf(email.getText()), EmailType.WORK);
+        vcard.addTelephoneNumber(String.valueOf(phone.getText()));
+        return vcard;
+    }
+
+    public class Profile {
+
+        private VCard vCard;
+        private String profileName;
+
+        public VCard getvCard() {
+            return vCard;
+        }
+
+        public String getProfileName() {
+            return profileName;
+        }
+
+        public Profile(VCard toVCard, String toProfileName) {
+            vCard = toVCard;
+            profileName = toProfileName;
+        }
+
+        public boolean equals(Object toCompare) {
+            if (!(toCompare instanceof Profile)) {
+                return false;
+            }
+
+            Profile newCompare = (Profile) toCompare;
+            String firstName = vCard.getStructuredName().getGiven();
+            String toCompareFirstName = newCompare.getvCard().getStructuredName().getGiven();
+            //String LastName = vCard.getFormatted
+
+
+            return (vCard.getStructuredName().getGiven().equals(newCompare.getvCard().getStructuredName().getGiven())
+                    && vCard.getStructuredName().getFamily().equals(newCompare.getvCard().getStructuredName().getFamily())
+                    //&& vCard.get
+                    && profileName.equals(newCompare.getProfileName()));
+
+        }
+
+        public String toString() {
+            return profileName;
+        }
+
+    }
+
+
 
 
 
