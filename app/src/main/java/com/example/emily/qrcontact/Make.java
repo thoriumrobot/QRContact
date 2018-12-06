@@ -1,5 +1,6 @@
 package com.example.emily.qrcontact;
 import android.content.Intent;
+import android.content.SharedPreferences;
 import android.os.Bundle;
 import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
@@ -19,8 +20,12 @@ import android.widget.EditText;
 import android.widget.ImageView;
 import android.widget.ListView;
 
+import com.google.gson.Gson;
+import com.google.gson.reflect.TypeToken;
 import com.squareup.picasso.Picasso;
 
+import java.lang.reflect.Array;
+import java.lang.reflect.Type;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -94,7 +99,8 @@ public class Make extends AppCompatActivity {
         final ListView profileList = findViewById(R.id.profileList);
         final Button saveProfile = findViewById(R.id.saveProfile);
         final Button chooseProfile = findViewById(R.id.chooseProfile);
-        final List<Profile> profileArrayList = new ArrayList<>();
+        final List<Profile> profileArrayList = loadData();
+
         final ConstraintLayout profileLayout = findViewById(R.id.profileLayout);
 
 
@@ -167,10 +173,51 @@ public class Make extends AppCompatActivity {
 
 
                 profileArrayList.add(toAddToList);
+                saveData(profileArrayList);
+                Log.d("Persistence", "Saved Data");
             }
         });
 
 
+
+
+    }
+
+    private void saveData(List<Profile> profileArrayList) {
+        SharedPreferences sharedPreferences = getSharedPreferences("shared preferences", MODE_PRIVATE);
+        Log.d("Persistence", "Make Shared Pref");
+        SharedPreferences.Editor editor = sharedPreferences.edit();
+        Log.d("Persistence", "Make Editor");
+        Gson gson = new Gson();
+        Log.d("Persistence", "Made Gson");
+        String json = gson.toJson(profileArrayList);
+        Log.d("Persistence", "Made Json");
+        editor.putString("task list", json);
+        Log.d("Persistence", "Put Json");
+
+        editor.apply();
+        Log.d("Persistence", "Applied");
+    }
+
+    private ArrayList<Profile> loadData() {
+        try {
+            ArrayList<Profile>  profileArrayList = new ArrayList<>();
+            SharedPreferences sharedPreferences = getSharedPreferences("shared preferences", MODE_PRIVATE);
+            Gson gson = new Gson();
+            String json = sharedPreferences.getString("task list", null);
+            Type type = new TypeToken<ArrayList<Profile>>() {}.getType();
+            profileArrayList = gson.fromJson(json, type);
+
+            if (profileArrayList == null) {
+                profileArrayList = new ArrayList<>();
+            }
+
+            return profileArrayList;
+        } catch (Exception e) {
+            Log.d("Persistence", e.toString());
+        }
+
+        return new ArrayList<Profile>();
     }
 
     private String getUrlVCard(VCard vCard) {
@@ -274,7 +321,10 @@ public class Make extends AppCompatActivity {
             return profileName;
         }
 
+
     }
+
+
 
 
 

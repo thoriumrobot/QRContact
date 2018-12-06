@@ -10,6 +10,7 @@ import android.support.annotation.NonNull;
 import android.support.design.widget.BottomNavigationView;
 import android.support.v4.app.ActivityCompat;
 import android.support.v7.app.AppCompatActivity;
+import android.util.Log;
 import android.util.SparseArray;
 import android.view.Menu;
 import android.view.MenuItem;
@@ -17,12 +18,18 @@ import android.view.SurfaceHolder;
 import android.view.SurfaceView;
 import android.widget.TextView;
 
+
 import com.google.android.gms.vision.CameraSource;
 import com.google.android.gms.vision.Detector;
 import com.google.android.gms.vision.barcode.Barcode;
 import com.google.android.gms.vision.barcode.BarcodeDetector;
 
+import java.io.File;
 import java.io.IOException;
+
+import ezvcard.Ezvcard;
+import ezvcard.VCard;
+import ezvcard.io.text.VCardReader;
 
 public class MainActivity extends AppCompatActivity {
 
@@ -44,8 +51,9 @@ public class MainActivity extends AppCompatActivity {
         barcodeDetector = new BarcodeDetector.Builder(this)
                 .setBarcodeFormats(Barcode.QR_CODE).build();
 
-        cameraSource = new CameraSource.Builder(this, barcodeDetector)
+        cameraSource = new CameraSource.Builder(this, barcodeDetector).setAutoFocusEnabled(true)
                 .setRequestedPreviewSize(640, 480).build();
+
 
         surfaceView.getHolder().addCallback(new SurfaceHolder.Callback() {
             @Override
@@ -70,6 +78,7 @@ public class MainActivity extends AppCompatActivity {
 
             @Override
             public void surfaceDestroyed(SurfaceHolder holder) {
+
                 cameraSource.stop();
             }
         });
@@ -90,7 +99,20 @@ public class MainActivity extends AppCompatActivity {
                         public void run() {
                             Vibrator vibrator = (Vibrator)getApplicationContext().getSystemService(Context.VIBRATOR_SERVICE);
                             vibrator.vibrate(1000);
-                            textView.setText(qrCodes.valueAt(0).displayValue);
+                            try {
+                                for (int x = 0; x < qrCodes.size(); x++) {
+                                    Log.d("ScanTest", qrCodes.valueAt(x).rawValue);
+
+                                }
+                            } catch (Exception e) {
+                                Log.d("ScanTest", e.toString());
+                            }
+                            textView.setText(qrCodes.valueAt(0).rawValue);
+
+                            VCard scannedContact = Ezvcard.parse(qrCodes.valueAt(0).rawValue).first();
+                            Log.d("ScanTest", scannedContact.getEmails().get(0).toString());
+
+
                         }
                     });
                 }
