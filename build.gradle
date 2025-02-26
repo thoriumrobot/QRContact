@@ -1,28 +1,28 @@
 // Top-level build file where you can add configuration options common to all sub-projects/modules.
-
 buildscript {
-    
     repositories {
         google()
-        jcenter()
+        mavenCentral()
+        // If you absolutely must still reference JCenter for something older, 
+        // keep it as a last fallback – but ideally remove it completely.
+        // jcenter()
     }
     dependencies {
+        // Try using the same plugin version, but if it can't be found in google/mavenCentral,
+        // upgrade to a newer version (and also update the Gradle wrapper).
         classpath 'com.android.tools.build:gradle:3.2.1'
         
-
         // NOTE: Do not place your application dependencies here; they belong
-        // in the individual module build.gradle files
+        // in the individual module build.gradle files.
     }
 }
 
 allprojects {
     repositories {
         google()
-        jcenter()
-        maven()
-                {
-                    url "https://maven.google.com"
-                }
+        mavenCentral()
+        // Additional repos if needed (e.g., JitPack).
+        // maven { url "https://jitpack.io" }
     }
 }
 
